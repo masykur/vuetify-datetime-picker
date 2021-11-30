@@ -21,20 +21,20 @@
     <v-card>
       <v-card-text class="px-0 py-0">
         <v-tabs fixed-tabs v-model="activeTab">
-          <v-tab key="calendar">
+          <v-tab key="calendar" v-if="mode === 'datetime' || mode === 'date'">
             <slot name="dateIcon">
               <v-icon>event</v-icon>
             </slot>
           </v-tab>
-          <v-tab key="timer" :disabled="dateSelected">
+          <v-tab key="timer" :disabled="dateSelected" v-if="mode === 'datetime' || mode === 'time'">
             <slot name="timeIcon">
               <v-icon>access_time</v-icon>
             </slot>
           </v-tab>
-          <v-tab-item key="calendar">
+          <v-tab-item key="calendar" v-if="mode === 'datetime' || mode === 'date'">
             <v-date-picker v-model="date" v-bind="datePickerProps" @input="showTimePicker" full-width></v-date-picker>
           </v-tab-item>
-          <v-tab-item key="timer">
+          <v-tab-item key="timer" v-if="mode === 'datetime' || mode === 'time'">
             <v-time-picker
               ref="timer"
               class="v-time-picker-custom"
@@ -57,15 +57,16 @@
 </template>
 
 <script>
-import { format, parse } from 'date-fns'
+import moment from 'moment'
 
 const DEFAULT_DATE = ''
 const DEFAULT_TIME = '00:00:00'
-const DEFAULT_DATE_FORMAT = 'yyyy-MM-dd'
+const DEFAULT_DATE_FORMAT = 'YYYY-MM-DD'
 const DEFAULT_TIME_FORMAT = 'HH:mm:ss'
 const DEFAULT_DIALOG_WIDTH = 340
 const DEFAULT_CLEAR_TEXT = 'CLEAR'
 const DEFAULT_OK_TEXT = 'OK'
+const DEFAULT_MODE = 'datetime'
 
 export default {
   name: 'v-datetime-picker',
@@ -116,6 +117,10 @@ export default {
     },
     timePickerProps: {
       type: Object
+    },
+    mode: {
+      type: String,
+      default: DEFAULT_MODE
     }
   },
   data() {
@@ -137,7 +142,7 @@ export default {
       return DEFAULT_DATE_FORMAT + ' ' + DEFAULT_TIME_FORMAT
     },
     formattedDatetime() {
-      return this.selectedDatetime ? format(this.selectedDatetime, this.dateTimeFormat) : ''
+      return this.selectedDatetime ? moment(this.selectedDatetime).format(this.dateTimeFormat) : ''
     },
     selectedDatetime() {
       if (this.date && this.time) {
@@ -145,7 +150,7 @@ export default {
         if (this.time.length === 5) {
           datetimeString += ':00'
         }
-        return parse(datetimeString, this.defaultDateTimeFormat, new Date())
+        return moment(datetimeString, this.defaultDateTimeFormat).toDate()
       } else {
         return null
       }
@@ -165,11 +170,11 @@ export default {
         initDateTime = this.datetime
       } else if (typeof this.datetime === 'string' || this.datetime instanceof String) {
         // see https://stackoverflow.com/a/9436948
-        initDateTime = parse(this.datetime, this.dateTimeFormat, new Date())
+        initDateTime = moment(this.datetime, this.dateTimeFormat)
       }
 
-      this.date = format(initDateTime, DEFAULT_DATE_FORMAT)
-      this.time = format(initDateTime, DEFAULT_TIME_FORMAT)
+      this.date = moment(initDateTime).format(DEFAULT_DATE_FORMAT)
+      this.time = moment(initDateTime).format(DEFAULT_TIME_FORMAT)
     },
     okHandler() {
       this.resetPicker()
